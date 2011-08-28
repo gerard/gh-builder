@@ -19,6 +19,7 @@ CONFIG = {
     'allowed_users':    ["AndroidAalto", "mkd", "marcostong17", "mataanin", "gerard", "quelcom", "jush", "hleinone"],
     'builder_root':     "/home/gerard/builder",
     'git_cmd':          "git",
+    'workspace_dir':    "_workspace",
 }
 
 try:
@@ -73,24 +74,24 @@ while 1:
         continue
 
     # uid uniquely identifies this build
-    uid = user + os.sep + repo + "-" + get_timestamp() + "-" + to
+    repo_dir = CONFIG["builder_root"] + os.sep + user + os.sep + repo
+    uid = get_timestamp() + "-" + to
 
-    checkout_root = CONFIG['builder_root'] + os.sep + user
-    shutil.rmtree(checkout_root + os.sep + repo, True)
+    shutil.rmtree(repo_dir + os.sep + CONFIG["workspace_dir"], True)
     try:
-        os.makedirs(checkout_root)
+        os.makedirs(repo_dir)
     except OSError:
         pass
-    os.chdir(checkout_root)
+    os.chdir(repo_dir)
 
-    git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo)]
+    git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo), CONFIG["workspace_dir"]]
     git_cmdline_checkout    = ["git", "checkout", to]
-    git_logging_clone       = open(CONFIG["builder_root"] + os.sep + uid + ".git-clone.log", "w")
-    git_logging_checkout    = open(CONFIG["builder_root"] + os.sep + uid + ".git-checkout.log", "w")
-    make_logging            = open(CONFIG["builder_root"] + os.sep + uid + ".make.log", "w")
+    git_logging_clone       = open(uid + ".git-clone.log", "w")
+    git_logging_checkout    = open(uid + ".git-checkout.log", "w")
+    make_logging            = open(uid + ".make.log", "w")
 
     subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT)
-    os.chdir(repo)
+    os.chdir(CONFIG["workspace_dir"])
 
     # We checkout the received git hash to be sure
     subprocess.call(git_cmdline_checkout, stdout=git_logging_checkout, stderr=subprocess.STDOUT)
@@ -100,11 +101,11 @@ while 1:
     git_logging_checkout.close()
     make_logging.close()
 
-    build_apk_name = repo + "-debug.apk"
+    os.chdir("..")
+    build_apk_name = CONFIG["workspace_dir"] + os.sep + "bin" + os.sep + CONFIG["workspace_dir"] + "-debug.apk"
 
     try:
-        os.rename(CONFIG["builder_root"] + os.sep + user + os.sep + repo + os.sep + "bin" + os.sep + build_apk_name,
-                  CONFIG["builder_root"] + os.sep + uid + ".apk")
+        os.rename(build_apk_name, repo + "-" + uid + ".apk")
     except:
         info("No apk found")
 
