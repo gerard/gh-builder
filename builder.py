@@ -24,13 +24,15 @@ CONFIG = {
 try:
     __log_file = open(sys.argv[1], "a")
 except:
+    __log_file = None
     print "W: No log file open"
     pass
 
 def __log(logtype, s):
     s = "[ " + str(datetime.datetime.today()) + "] " + logtype + ": " + s
-    print >> __log_file, s
-    __log_file.flush()
+    if __log_file:
+        print >> __log_file, s
+        __log_file.flush()
     print s
 
 info    = lambda s: __log("I", s)
