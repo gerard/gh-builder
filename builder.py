@@ -108,10 +108,18 @@ while 1:
 
     os.chdir("..")
     build_apk_name = CONFIG["workspace_dir"] + os.sep + "bin" + os.sep + CONFIG["workspace_dir"] + "-debug.apk"
+    apk_final_name = repo + "-" + uid + ".apk"
 
     try:
-        os.rename(build_apk_name, repo + "-" + uid + ".apk")
+        os.rename(build_apk_name, apk_final_name)
     except:
         info("No apk found")
+
+    try:
+        tmplink = apk_final_name + ".tmplink"
+        os.symlink(apk_final_name, tmplink)
+        os.rename(tmplink, repo + ".apk")
+    except:
+        info("Unable to create symlink")
 
     info("All data processed")
