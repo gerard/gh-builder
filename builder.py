@@ -4,6 +4,7 @@ import urllib2
 import json
 import re
 import os
+import os.path
 import sys
 import subprocess
 import struct
@@ -42,6 +43,30 @@ error   = lambda s: __log("E", s)
 def get_timestamp():
     d = datetime.datetime.today()
     return "%d-%02d-%02d_%02d:%02d" % (d.year, d.month, d.day, d.hour, d.minute)
+
+def build(name, logfile):
+    if os.path.exists("AndroidManifest.xml"):
+        # Special-case android projects.  That way we avoid makefiles, which,
+        # let's face it, are not precisely Web2.0 ;)
+        update_project  = ["android", "update", "project", "-n", name, "-p", "."]
+        ant_build       = ["ant", "debug"]
+
+        if subprocess.call(update_project, stdout=logfile, stderr=subprocess.STDOUT) != 0:
+            error("Update project failed")
+            return False
+
+        if subprocess.call(ant_build, stdout=logfile, stderr=subprocess.STDOUT) != 0:
+            error("Ant build failed")
+            return False
+
+    else:
+        if subprocess.call("make", stdout=logfile, stderr=subprocess.STDOUT) != 0:
+            error("make failed")
+            return False
+
+    return True
+
+
 
 while 1:
     (client_s, _) = s.accept()
@@ -104,7 +129,7 @@ while 1:
     git_cmdline_checkout    = ["git", "checkout", to]
     git_logging_clone       = open(uid + ".git-clone.log", "w")
     git_logging_checkout    = open(uid + ".git-checkout.log", "w")
-    make_logging            = open(uid + ".make.log", "w")
+    build_logging           = open(uid + ".build.log", "w")
 
     if subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT) != 0:
         error("git clone failed")
@@ -117,13 +142,13 @@ while 1:
         error("git checkout failed")
         continue
 
-    if subprocess.call("make", stdout=make_logging, stderr=subprocess.STDOUT) != 0:
-        error("make failed")
+    if not build(CONFIG["workspace_dir"], build_logging):
+        error("Build failed")
         continue
 
     git_logging_clone.close()
     git_logging_checkout.close()
-    make_logging.close()
+    build_logging.close()
 
     os.chdir("..")
     build_apk_name = CONFIG["workspace_dir"] + os.sep + "bin" + os.sep + CONFIG["workspace_dir"] + "-debug.apk"
