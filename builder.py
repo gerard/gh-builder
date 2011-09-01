@@ -48,6 +48,7 @@ while 1:
     client_s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, struct.pack('LL', 2, 0))
     data = ""
     url = ""
+    ref = ""
 
     info("New connection incoming")
     while 1:
@@ -62,9 +63,15 @@ while 1:
 
     for m in re.finditer("payload=(.*)", data):
         json_string = urllib2.unquote(m.group(1))
-        url = json.loads(json_string)['compare']
+        json_dict = json.loads(json_string)
+        url = json_dict['compare']
+        ref = json_dict['ref']
 
-    # We only handle the last url for now
+    if ref != "refs/heads/master":
+        info("Updated branch is not master [%s].  Skipping for now..." % ref)
+        continue;
+
+    # We only handle the last payload if multiple come
     info("Processing URL: %s" % url)
     m = re.match("https://github.com/([A-Za-z0-9_]*)/([A-Za-z0-9_]*)/compare/([0-9a-f]*)\.\.\.([0-9a-f]*)", url)
 
