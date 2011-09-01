@@ -99,12 +99,20 @@ while 1:
     git_logging_checkout    = open(uid + ".git-checkout.log", "w")
     make_logging            = open(uid + ".make.log", "w")
 
-    subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT)
+    if subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT) != 0:
+        error("git clone failed")
+        continue
+
     os.chdir(CONFIG["workspace_dir"])
 
     # We checkout the received git hash to be sure
-    subprocess.call(git_cmdline_checkout, stdout=git_logging_checkout, stderr=subprocess.STDOUT)
-    subprocess.call("make", stdout=make_logging, stderr=subprocess.STDOUT)
+    if subprocess.call(git_cmdline_checkout, stdout=git_logging_checkout, stderr=subprocess.STDOUT) != 0:
+        error("git checkout failed")
+        continue
+
+    if subprocess.call("make", stdout=make_logging, stderr=subprocess.STDOUT) != 0:
+        error("make failed")
+        continue
 
     git_logging_clone.close()
     git_logging_checkout.close()
