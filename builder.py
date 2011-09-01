@@ -47,6 +47,7 @@ while 1:
     (client_s, _) = s.accept()
     client_s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, struct.pack('LL', 2, 0))
     data = ""
+    url = ""
 
     info("New connection incoming")
     while 1:
@@ -66,6 +67,10 @@ while 1:
     # We only handle the last url for now
     info("Processing URL: %s" % url)
     m = re.match("https://github.com/([A-Za-z0-9_]*)/([A-Za-z0-9_]*)/compare/([0-9a-f]*)\.\.\.([0-9a-f]*)", url)
+
+    if not m:
+        error("Invalid URL")
+        continue
 
     (user, repo, fro, to) = (m.group(1), m.group(2), m.group(3), m.group(4))
 
