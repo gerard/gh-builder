@@ -78,6 +78,10 @@ while 1:
         error("User not allowed: %s" % user)
         continue
 
+    if to == "00000000":
+        info("User deleted a branch.  Nothing to see here...")
+        continue
+
     # uid uniquely identifies this build
     repo_dir = CONFIG["builder_root"] + os.sep + user + os.sep + repo
     uid = get_timestamp() + "-" + to
