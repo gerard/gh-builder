@@ -21,6 +21,7 @@ CONFIG = {
     'builder_root':     "/home/gerard/builder",
     'git_cmd':          "git",
     'workspace_dir':    "_workspace",
+    'logs_dir':         "log",
 }
 
 try:
@@ -120,16 +121,16 @@ while 1:
 
     shutil.rmtree(repo_dir + os.sep + CONFIG["workspace_dir"], True)
     try:
-        os.makedirs(repo_dir)
+        os.makedirs(repo_dir + os.sep + CONFIG["logs_dir"])
     except OSError:
         pass
     os.chdir(repo_dir)
 
     git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo), CONFIG["workspace_dir"]]
     git_cmdline_checkout    = ["git", "checkout", to]
-    git_logging_clone       = open(uid + ".git-clone.log", "w")
-    git_logging_checkout    = open(uid + ".git-checkout.log", "w")
-    build_logging           = open(uid + ".build.log", "w")
+    git_logging_clone       = open(CONFIG['logs_dir'] + os.sep + uid + ".git-clone.log", "w")
+    git_logging_checkout    = open(CONFIG['logs_dir'] + os.sep + uid + ".git-checkout.log", "w")
+    build_logging           = open(CONFIG['logs_dir'] + os.sep + uid + ".build.log", "w")
 
     if subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT) != 0:
         error("git clone failed")
