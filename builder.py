@@ -133,7 +133,7 @@ class BuilderThread(threading.Thread):
             error("Command failed [%d]: %s" % (e.retval, e.cmd))
             return
 
-        if not build(CONFIG.workspace_dir, build_logging, CONFIG.allowed_users[user]["max_build_time"]):
+        if not build(CONFIG.workspace_dir, build_logging, CONFIG.allowed_users[user].max_build_time):
             error("Build failed")
             return
 
