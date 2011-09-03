@@ -113,21 +113,21 @@ while 1:
         continue
 
     # uid uniquely identifies this build
-    repo_dir = CONFIG.builder_root + os.sep + user + os.sep + repo
+    repo_dir = os.path.join(CONFIG.builder_root, user, repo)
     uid = get_timestamp() + "-" + to
 
-    shutil.rmtree(repo_dir + os.sep + CONFIG.workspace_dir, True)
+    shutil.rmtree(os.path.join(repo_dir, CONFIG.workspace_dir), True)
     try:
-        os.makedirs(repo_dir + os.sep + CONFIG.logs_dir)
+        os.makedirs(os.path.join(repo_dir, CONFIG.logs_dir))
     except OSError:
         pass
     os.chdir(repo_dir)
 
     git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo), CONFIG.workspace_dir]
     git_cmdline_checkout    = ["git", "checkout", to]
-    git_logging_clone       = open(CONFIG.logs_dir + os.sep + uid + ".git-clone.log", "w")
-    git_logging_checkout    = open(CONFIG.logs_dir + os.sep + uid + ".git-checkout.log", "w")
-    build_logging           = open(CONFIG.logs_dir + os.sep + uid + ".build.log", "w")
+    git_logging_clone       = open(os.path.join(CONFIG.logs_dir, uid + ".git-clone.log"), "w")
+    git_logging_checkout    = open(os.path.join(CONFIG.logs_dir, uid + ".git-checkout.log"), "w")
+    build_logging           = open(os.path.join(CONFIG.logs_dir, uid + ".build.log"), "w")
 
     if subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT) != 0:
         error("git clone failed")
@@ -149,7 +149,7 @@ while 1:
     build_logging.close()
 
     os.chdir("..")
-    build_apk_name = CONFIG.workspace_dir + os.sep + "bin" + os.sep + CONFIG.workspace_dir + "-debug.apk"
+    build_apk_name = os.path.join(CONFIG.workspace_dir, "bin", CONFIG.workspace_dir + "-debug.apk")
     apk_final_name = repo + "-" + uid + ".apk"
 
     try:
