@@ -10,15 +10,8 @@ import subprocess
 import struct
 import shutil
 import datetime
+import ghconfig as CONFIG
 
-
-CONFIG = {
-    'allowed_users':    ["AndroidAalto", "mkd", "marcostong17", "mataanin", "gerard", "quelcom", "jush", "hleinone"],
-    'builder_root':     "/home/gerard/builder",
-    'git_cmd':          "git",
-    'workspace_dir':    "_workspace",
-    'logs_dir':         "log",
-}
 
 def __log(logtype, s):
     s = "[ " + str(datetime.datetime.today()) + "] " + logtype + ": " + s
@@ -111,7 +104,7 @@ while 1:
 
     (user, repo, fro, to) = (m.group(1), m.group(2), m.group(3), m.group(4))
 
-    if user not in CONFIG["allowed_users"]:
+    if user not in CONFIG.allowed_users:
         error("User not allowed: %s" % user)
         continue
 
@@ -120,34 +113,34 @@ while 1:
         continue
 
     # uid uniquely identifies this build
-    repo_dir = CONFIG["builder_root"] + os.sep + user + os.sep + repo
+    repo_dir = CONFIG.builder_root + os.sep + user + os.sep + repo
     uid = get_timestamp() + "-" + to
 
-    shutil.rmtree(repo_dir + os.sep + CONFIG["workspace_dir"], True)
+    shutil.rmtree(repo_dir + os.sep + CONFIG.workspace_dir, True)
     try:
-        os.makedirs(repo_dir + os.sep + CONFIG["logs_dir"])
+        os.makedirs(repo_dir + os.sep + CONFIG.logs_dir)
     except OSError:
         pass
     os.chdir(repo_dir)
 
-    git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo), CONFIG["workspace_dir"]]
+    git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo), CONFIG.workspace_dir]
     git_cmdline_checkout    = ["git", "checkout", to]
-    git_logging_clone       = open(CONFIG['logs_dir'] + os.sep + uid + ".git-clone.log", "w")
-    git_logging_checkout    = open(CONFIG['logs_dir'] + os.sep + uid + ".git-checkout.log", "w")
-    build_logging           = open(CONFIG['logs_dir'] + os.sep + uid + ".build.log", "w")
+    git_logging_clone       = open(CONFIG.logs_dir + os.sep + uid + ".git-clone.log", "w")
+    git_logging_checkout    = open(CONFIG.logs_dir + os.sep + uid + ".git-checkout.log", "w")
+    build_logging           = open(CONFIG.logs_dir + os.sep + uid + ".build.log", "w")
 
     if subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT) != 0:
         error("git clone failed")
         continue
 
-    os.chdir(CONFIG["workspace_dir"])
+    os.chdir(CONFIG.workspace_dir)
 
     # We checkout the received git hash to be sure
     if subprocess.call(git_cmdline_checkout, stdout=git_logging_checkout, stderr=subprocess.STDOUT) != 0:
         error("git checkout failed")
         continue
 
-    if not build(CONFIG["workspace_dir"], build_logging):
+    if not build(CONFIG.workspace_dir, build_logging):
         error("Build failed")
         continue
 
@@ -156,7 +149,7 @@ while 1:
     build_logging.close()
 
     os.chdir("..")
-    build_apk_name = CONFIG["workspace_dir"] + os.sep + "bin" + os.sep + CONFIG["workspace_dir"] + "-debug.apk"
+    build_apk_name = CONFIG.workspace_dir + os.sep + "bin" + os.sep + CONFIG.workspace_dir + "-debug.apk"
     apk_final_name = repo + "-" + uid + ".apk"
 
     try:
