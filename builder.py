@@ -11,10 +11,6 @@ import struct
 import shutil
 import datetime
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(("192.168.1.64", 8765))
-s.listen(5)
 
 CONFIG = {
     'allowed_users':    ["AndroidAalto", "mkd", "marcostong17", "mataanin", "gerard", "quelcom", "jush", "hleinone"],
@@ -23,13 +19,6 @@ CONFIG = {
     'workspace_dir':    "_workspace",
     'logs_dir':         "log",
 }
-
-try:
-    __log_file = open(sys.argv[1], "a")
-except:
-    __log_file = None
-    print "W: No log file open"
-    pass
 
 def __log(logtype, s):
     s = "[ " + str(datetime.datetime.today()) + "] " + logtype + ": " + s
@@ -68,7 +57,22 @@ def build(name, logfile):
     return True
 
 
+# Main
+# Logging file
+try:
+    __log_file = open(sys.argv[1], "a")
+except:
+    __log_file = None
+    print "W: No log file open"
+    pass
 
+# Set up server socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("192.168.1.64", 8765))
+s.listen(5)
+
+# Main loop: one loop per accept(2)ed incoming conection
 while 1:
     (client_s, _) = s.accept()
     client_s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, struct.pack('LL', 2, 0))
