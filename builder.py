@@ -6,11 +6,12 @@ import re
 import os
 import os.path
 import sys
-import subprocess
 import struct
 import shutil
 import datetime
 import threading
+import subprocess
+import ghblib.shellrunner
 import ghconfig as CONFIG
 
 
@@ -31,25 +32,25 @@ def get_timestamp():
 def get_artifact_log(uid, artifact_name):
     return open(os.path.join(CONFIG.logs_dir, uid + "." + artifact_name + ".log"), "w")
 
-def build(name, logfile):
-    if os.path.exists("AndroidManifest.xml"):
-        # Special-case android projects.  That way we avoid makefiles, which,
-        # let's face it, are not precisely Web2.0 ;)
-        update_project  = ["android", "update", "project", "-n", name, "-p", "."]
-        ant_build       = ["ant", "debug"]
+def build(name, logfile, timeout):
+    try:
+        if os.path.exists("AndroidManifest.xml"):
+            # Special-case android projects.  That way we avoid makefiles, which,
+            # let's face it, are not precisely Web2.0 ;)
+            update_project  = ["android", "update", "project", "-n", name, "-p", "."]
+            ant_build       = ["ant", "debug"]
 
-        if subprocess.call(update_project, stdout=logfile, stderr=subprocess.STDOUT) != 0:
-            error("Update project failed")
-            return False
+            timeout = ghblib.shellrunner.ShellRunner(update_project, logfile).run(timeout)
+            timeout = ghblib.shellrunner.ShellRunner(ant_build, logfile).run(timeout)
+        else:
+            timeout = ghblib.shellrunner.ShellRunner("make", logfile).run(timeout)
 
-        if subprocess.call(ant_build, stdout=logfile, stderr=subprocess.STDOUT) != 0:
-            error("Ant build failed")
-            return False
-
-    else:
-        if subprocess.call("make", stdout=logfile, stderr=subprocess.STDOUT) != 0:
-            error("make failed")
-            return False
+    except ghblib.shellrunner.ShellRunnerTimeout as e:
+        error("Timeout while running: %s" % e.cmd)
+        return False
+    except ghblib.shellrunner.ShellRunner as e:
+        error("Command failed [%d]: %s" % (e.retval, e.cmd))
+        return False
 
     return True
 
@@ -131,7 +132,7 @@ class BuilderThread(threading.Thread):
             error("git checkout failed")
             return
 
-        if not build(CONFIG.workspace_dir, build_logging):
+        if not build(CONFIG.workspace_dir, build_logging, CONFIG.allowed_users[user]["max_build_time"]):
             error("Build failed")
             return
 
