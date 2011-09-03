@@ -10,7 +10,6 @@ import struct
 import shutil
 import datetime
 import threading
-import subprocess
 import ghblib.shellrunner
 import ghconfig as CONFIG
 
@@ -117,28 +116,26 @@ class BuilderThread(threading.Thread):
 
         git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo), CONFIG.workspace_dir]
         git_cmdline_checkout    = ["git", "checkout", to]
+
+        # TODO: Move this to the ShellRunner class (it's already closing these)
         git_logging_clone       = get_artifact_log(uid, "git-clone")
         git_logging_checkout    = get_artifact_log(uid, "git-checkout")
         build_logging           = get_artifact_log(uid, "build")
 
-        if subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT) != 0:
-            error("git clone failed")
+        try:
+            ghblib.shellrunner.ShellRunner(git_cmdline_clone, git_logging_clone).run(10)
+            os.chdir(CONFIG.workspace_dir)
+            ghblib.shellrunner.ShellRunner(git_cmdline_checkout, git_logging_checkout).run(10)
+        except ShellRunnerTimeout as e:
+            error("Timeout while running: %s" % e.cmd)
             return
-
-        os.chdir(CONFIG.workspace_dir)
-
-        # We checkout the received git hash to be sure
-        if subprocess.call(git_cmdline_checkout, stdout=git_logging_checkout, stderr=subprocess.STDOUT) != 0:
-            error("git checkout failed")
+        except ShellRunnerFailed as e:
+            error("Command failed [%d]: %s" % (e.retval, e.cmd))
             return
 
         if not build(CONFIG.workspace_dir, build_logging, CONFIG.allowed_users[user]["max_build_time"]):
             error("Build failed")
             return
-
-        git_logging_clone.close()
-        git_logging_checkout.close()
-        build_logging.close()
 
         os.chdir("..")
         build_apk_name = os.path.join(CONFIG.workspace_dir, "bin", CONFIG.workspace_dir + "-debug.apk")

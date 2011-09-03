@@ -19,7 +19,7 @@ class ShellRunner(object):
 
     def run(self, timeout):
         def target():
-            self.process = subprocess.Popen(self.cmd, stdout=self.logfile, stderr=subprocess.STDOUT)
+            self.process = subprocess.Popen(self.cmd, stdout=self.logfile, stderr=subprocess.STDOUT, close_fds=True)
             self.process.wait()
 
         start_time = time.time()
@@ -32,8 +32,7 @@ class ShellRunner(object):
             thread.join()
             raise ShellRunnerTimeout(self.cmd)
 
-        if self.process.returncode != 0:
-            raise ShellRunnerFailed(self.cmd, self.process.returncode)
+        # TODO: Get the return code and raise if != 0
 
         # Return the remaining time
         return timeout - (time.time() - start_time)
