@@ -27,6 +27,9 @@ def get_timestamp():
     d = datetime.datetime.today()
     return "%d-%02d-%02d_%02d:%02d" % (d.year, d.month, d.day, d.hour, d.minute)
 
+def get_artifact_log(uid, artifact_name):
+    return open(os.path.join(CONFIG.logs_dir, uid + "." + artifact_name + ".log"), "w")
+
 def build(name, logfile):
     if os.path.exists("AndroidManifest.xml"):
         # Special-case android projects.  That way we avoid makefiles, which,
@@ -125,9 +128,9 @@ while 1:
 
     git_cmdline_clone       = ["git", "clone", "git://github.com/%s/%s.git" % (user, repo), CONFIG.workspace_dir]
     git_cmdline_checkout    = ["git", "checkout", to]
-    git_logging_clone       = open(os.path.join(CONFIG.logs_dir, uid + ".git-clone.log"), "w")
-    git_logging_checkout    = open(os.path.join(CONFIG.logs_dir, uid + ".git-checkout.log"), "w")
-    build_logging           = open(os.path.join(CONFIG.logs_dir, uid + ".build.log"), "w")
+    git_logging_clone       = get_artifact_log(uid, "git-clone")
+    git_logging_checkout    = get_artifact_log(uid, "git-checkout")
+    build_logging           = get_artifact_log(uid, "build")
 
     if subprocess.call(git_cmdline_clone, stdout=git_logging_clone, stderr=subprocess.STDOUT) != 0:
         error("git clone failed")
